@@ -47,6 +47,12 @@ drop policy if exists "Editors can delete steps" on public.steps;
 create policy "Editors can delete steps" on public.steps
   for delete to authenticated using (public.is_editor());
 
+-- Newer projects don't grant table access to the API roles by default.
+-- The policies above still decide which rows each role can touch.
+grant usage on schema public to anon, authenticated;
+grant select on public.steps to anon, authenticated;
+grant insert, update, delete on public.steps to authenticated;
+
 -- 3. Save one folder's list in one transaction ---------------------------------
 -- Runs as the caller, so the policies above still apply.
 create or replace function public.save_steps(p_folder text, p_items jsonb)
