@@ -65,7 +65,7 @@ svg{display:block}
 
 .node{font:inherit;color:inherit;width:100%;background:var(--card);border:2px solid var(--c);
   border-radius:14px;padding:14px 10px 12px;cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;gap:6px;position:relative;transition:background .15s,transform .15s}
+  align-items:center;justify-content:center;gap:6px;position:relative;transition:background .15s,transform .15s}
 .node.empty{border-style:dashed}
 .node:hover{transform:translateY(-2px)}
 .node.sel{background:var(--cs);box-shadow:0 0 0 3px var(--cs)}
@@ -75,6 +75,7 @@ svg{display:block}
 .sym{color:var(--c);width:64px;height:64px}
 .node.empty .sym{opacity:.8}
 .node[data-c="data"] .sym{width:96px;height:96px}
+.txt{display:flex;flex-direction:column;align-items:center;gap:2px}
 .name{font-weight:600;font-size:.9rem;word-break:break-word;text-align:center}
 .state{font-size:.78rem;color:var(--muted)}
 .node:not(.empty) .state{color:var(--c);font-weight:600}
@@ -115,7 +116,7 @@ h3{font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--c)
   .sym{width:40px;height:40px}
   .node[data-c="data"] .sym{width:56px;height:56px}
   .name{text-align:left}
-  .txt{display:flex;flex-direction:column}
+  .txt{align-items:flex-start}
   .cols{grid-template-columns:1fr}
 }
 </style>
