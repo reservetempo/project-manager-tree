@@ -7,66 +7,115 @@
 <meta name="description" content="The four main folders of the Project Manager, what is in each one, and the next steps.">
 <style>
 :root{
-  --bg:#f7f6f2; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#cfcdc4;
-  --accent:#2f6fde; --soft:#e8effc; --empty:#a19f96;
+  --bg:#f7f6f2; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#d6d4cb;
+  /* one hue per folder, used for its symbol, border, badge and bullets */
+  --data:#2f6fde;    --data-soft:#e6eefc;
+  --idea:#c97a00;    --idea-soft:#fbf0dc;
+  --proj:#1f9257;    --proj-soft:#e1f3e9;
+  --cont:#8a46d1;    --cont-soft:#f1e8fb;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#45443f;
-    --accent:#7aa5f5; --soft:#1f2a40; --empty:#77756e;
+    --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#3e3d39;
+    --data:#7aa5f5; --data-soft:#1c2740;
+    --idea:#f0b04a; --idea-soft:#33280f;
+    --proj:#5cc98d; --proj-soft:#13301f;
+    --cont:#b98cf0; --cont-soft:#2a1d3d;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#45443f;
-  --accent:#7aa5f5; --soft:#1f2a40; --empty:#77756e;
+  --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#3e3d39;
+  --data:#7aa5f5; --data-soft:#1c2740;
+  --idea:#f0b04a; --idea-soft:#33280f;
+  --proj:#5cc98d; --proj-soft:#13301f;
+  --cont:#b98cf0; --cont-soft:#2a1d3d;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:880px;margin:0 auto;padding:40px 16px 64px}
+main{max-width:920px;margin:0 auto;padding:40px 16px 64px}
 h1{font-size:1.5rem;margin:0 0 4px}
-.sub{color:var(--muted);margin:0 0 36px}
+.sub{color:var(--muted);margin:0 0 10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--muted);font-size:.85rem;margin:0 0 32px}
+.legend i{display:inline-block;width:22px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:2px solid var(--muted)}
+.legend .dash{border-style:dashed;opacity:.7}
+
+.mono{font-family:ui-monospace,Consolas,monospace}
+svg{display:block}
+
+/* folder colour scopes */
+[data-c="data"]{--c:var(--data);--cs:var(--data-soft)}
+[data-c="idea"]{--c:var(--idea);--cs:var(--idea-soft)}
+[data-c="proj"]{--c:var(--proj);--cs:var(--proj-soft)}
+[data-c="cont"]{--c:var(--cont);--cs:var(--cont-soft)}
 
 /* tree */
 .tree{display:flex;flex-direction:column;align-items:center}
-.node{font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line);
-  border-radius:10px;padding:10px 14px;cursor:pointer;text-align:center;min-width:0}
-.root{cursor:default;font-weight:600;font-family:ui-monospace,Consolas,monospace}
-.stem{width:1.5px;height:22px;background:var(--line)}
-.kids{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;position:relative;padding-top:22px}
-.kids::before{content:"";position:absolute;top:0;left:12.5%;right:12.5%;height:1.5px;background:var(--line)}
+.root{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);
+  border-radius:10px;padding:8px 14px;font-weight:600}
+.root svg{width:22px;height:22px;color:var(--muted)}
+.stem{width:2px;height:22px;background:var(--line)}
+.kids{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%;position:relative;padding-top:22px}
+.kids::before{content:"";position:absolute;top:0;left:12.5%;right:12.5%;height:2px;background:var(--line)}
 .kid{position:relative;display:flex}
-.kid::before{content:"";position:absolute;top:-22px;left:50%;width:1.5px;height:22px;background:var(--line)}
-.kid .node{width:100%}
-.name{display:block;font-family:ui-monospace,Consolas,monospace;font-weight:600;font-size:.92rem;word-break:break-word}
-.state{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
-.node.sel{border-color:var(--accent);background:var(--soft)}
-.node:not(.root):hover{border-color:var(--accent)}
-.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kid::before{content:"";position:absolute;top:-22px;left:50%;width:2px;height:22px;background:var(--line)}
+/* flow arrows between siblings: data → ideas → projects → content */
+.kid:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;
+  border:5px solid transparent;border-left:7px solid var(--line);transform:translateY(-50%)}
+
+.node{font:inherit;color:inherit;width:100%;background:var(--card);border:2px solid var(--c);
+  border-radius:14px;padding:14px 10px 12px;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:6px;position:relative;transition:background .15s,transform .15s}
+.node.empty{border-style:dashed}
+.node:hover{transform:translateY(-2px)}
+.node.sel{background:var(--cs);box-shadow:0 0 0 3px var(--cs)}
+.node:focus-visible{outline:3px solid var(--c);outline-offset:3px}
+.badge{position:absolute;top:8px;left:8px;width:22px;height:22px;border-radius:50%;
+  background:var(--c);color:var(--card);font-size:.75rem;font-weight:700;display:grid;place-items:center}
+.sym{color:var(--c);width:64px;height:64px}
+.node.empty .sym{opacity:.8}
+.node[data-c="data"] .sym{width:96px;height:96px}
+.name{font-weight:600;font-size:.9rem;word-break:break-word;text-align:center}
+.state{font-size:.78rem;color:var(--muted)}
+.node:not(.empty) .state{color:var(--c);font-weight:600}
 
 /* panel */
-.panel{margin-top:28px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:20px 22px}
-.panel h2{margin:0 0 2px;font-size:1.15rem;font-family:ui-monospace,Consolas,monospace}
-.panel .goal{color:var(--muted);margin:0 0 18px}
+.panel{margin-top:28px;background:var(--card);border:1.5px solid var(--line);border-left:6px solid var(--c);
+  border-radius:12px;padding:20px 22px}
+.phead{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.phead .sym{width:52px;height:52px;flex:none}
+.panel h2{margin:0;font-size:1.15rem}
+.panel .goal{color:var(--muted);margin:2px 0 0}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-h3{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+h3{font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--c);margin:0 0 10px}
 .items{list-style:none;margin:0;padding:0}
-.items li{padding:8px 0;border-top:1px solid var(--line)}
+.items li{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .items li:first-child{border-top:0;padding-top:0}
-.items b{display:block;font-family:ui-monospace,Consolas,monospace;font-size:.9rem}
+.items .ic{width:30px;height:30px;flex:none;color:var(--c)}
+.items b{display:block;font-size:.9rem}
 .items span{color:var(--muted);font-size:.9rem}
-.items .none{color:var(--empty);font-style:italic}
-.steps{margin:0;padding-left:1.1em}
-.steps li{margin:0 0 6px}
+.items .none{color:var(--muted);font-style:italic;align-items:center}
+.items .none .ic{opacity:.6}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{position:relative;padding:0 0 8px 32px;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:6px;
+  background:var(--cs);color:var(--c);font-size:.75rem;font-weight:700;display:grid;place-items:center}
 .hint{color:var(--muted);text-align:center;margin:28px 0 0}
 
-@media (max-width:640px){
-  .kids{grid-template-columns:1fr;gap:10px;padding:0 0 0 22px;align-self:stretch}
-  .kids::before{left:0;right:auto;top:0;bottom:22px;width:1.5px;height:auto}
-  .kid::before{top:50%;left:-22px;width:22px;height:1.5px}
+@media (max-width:680px){
   .tree{align-items:flex-start}
-  .stem{margin-left:0;height:14px}
-  .node{text-align:left}
+  .kids{grid-template-columns:1fr;gap:10px;padding:0 0 0 24px;align-self:stretch}
+  .kids::before{left:0;right:auto;top:0;bottom:36px;width:2px;height:auto}
+  .kid::before{top:50%;left:-24px;width:24px;height:2px}
+  .kid:not(:last-child)::after{right:auto;left:50%;top:auto;bottom:-11px;transform:translateX(-50%);
+    border:5px solid transparent;border-top:7px solid var(--line)}
+  .stem{margin-left:20px;height:14px}
+  .node{flex-direction:row;padding:10px 12px 10px 40px;gap:12px;text-align:left}
+  .badge{top:50%;transform:translateY(-50%);left:10px}
+  .sym{width:40px;height:40px}
+  .node[data-c="data"] .sym{width:56px;height:56px}
+  .name{text-align:left}
+  .txt{display:flex;flex-direction:column}
   .cols{grid-template-columns:1fr}
 }
 </style>
@@ -74,10 +123,11 @@ h3{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mu
 <body>
 <main>
   <h1>Project Manager</h1>
-  <p class="sub">Four folders, in the order the data flows. Click one to see what's in it and what comes next.</p>
+  <p class="sub">Four folders, numbered in the order data flows through them. Click one to see what's in it and what comes next.</p>
+  <p class="legend"><span><i></i>solid = has content</span><span><i class="dash"></i>dashed = empty, still to build</span></p>
 
-  <div class="tree" id="tree">
-    <div class="node root">project-manager/</div>
+  <div class="tree">
+    <div class="root mono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>project-manager/</div>
     <div class="stem"></div>
     <div class="kids" id="kids"></div>
   </div>
@@ -87,13 +137,43 @@ h3{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mu
 </main>
 
 <script>
+/* Symbols: each one is a conventional sign for what the folder does. */
+const SYM = {
+  /* database cylinder: stored, indexed data */
+  data: `<svg class="sym" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 14v36c0 3.9 9 7 20 7s20-3.1 20-7V14" fill="var(--cs)"/>
+    <ellipse cx="32" cy="14" rx="20" ry="7" fill="currentColor" fill-opacity=".22"/>
+    <path d="M12 26c0 3.9 9 7 20 7s20-3.1 20-7M12 38c0 3.9 9 7 20 7s20-3.1 20-7"/>
+    <circle cx="44" cy="31" r="1.8" fill="currentColor" stroke="none"/><circle cx="44" cy="43" r="1.8" fill="currentColor" stroke="none"/><circle cx="44" cy="55" r="1.8" fill="currentColor" stroke="none"/></svg>`,
+  /* light bulb: an idea */
+  idea: `<svg class="sym" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M32 8a16 16 0 0 0-9.5 28.9c1.8 1.4 2.5 3 2.5 5V44h14v-2.1c0-2 .7-3.6 2.5-5A16 16 0 0 0 32 8z" fill="var(--cs)"/>
+    <path d="M25 50h14M27 56h10M32 44V32m-4-4 4 4 4-4"/>
+    <path d="M32 1v2M8 22H4M60 22h-4M13 7l3 3M51 7l-3 3" stroke-width="2.2"/></svg>`,
+  /* clipboard with ticks: goals and progress */
+  proj: `<svg class="sym" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="12" y="10" width="40" height="48" rx="5" fill="var(--cs)"/>
+    <rect x="23" y="5" width="18" height="9" rx="3" fill="var(--card)"/>
+    <path d="m19 26 4 4 7-7M35 27h10M19 40l4 4 7-7M35 41h10"/></svg>`,
+  /* page plus play button: text becomes a page or a video */
+  cont: `<svg class="sym" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M10 6h22l9 9v31H10z" fill="var(--cs)"/><path d="M32 6v9h9M17 24h17M17 31h17M17 38h10"/>
+    <circle cx="45" cy="46" r="13" fill="currentColor" stroke="var(--card)"/>
+    <path d="M41 39.5v13l11-6.5z" fill="var(--card)" stroke="none"/></svg>`
+};
+const IC = {
+  book: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z" fill="var(--cs)"/></svg>`,
+  paper: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" fill="var(--cs)"/><path d="M15 3v4h4M9 12h7M9 16h7"/></svg>`,
+  empty: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.5" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>`
+};
+
 const FOLDERS = [
   {
-    id: 'data', state: '2 stores · 19.2 GB',
+    id: 'data', c: 'data', state: '2 stores · 19.2 GB',
     goal: 'Collect the books and papers, and index them so every other folder can search them.',
     items: [
-      ['ebooks/', '341 books in 20 categories (12 GB). 141 books, 69,223 pages in the search index.'],
-      ['papers/', '3.25 million arXiv records (7.2 GB). Titles and abstracts only, no full text.']
+      ['book', 'ebooks/', '341 books in 20 categories (12 GB). 141 books, 69,223 pages in the search index.'],
+      ['paper', 'papers/', '3.25 million arXiv records (7.2 GB). Titles and abstracts only, no full text.']
     ],
     next: [
       'Index the 200 books not yet searchable',
@@ -103,7 +183,7 @@ const FOLDERS = [
     ]
   },
   {
-    id: 'idea-organizer', state: 'empty',
+    id: 'idea-organizer', c: 'idea', state: 'empty',
     goal: 'Catch each new idea, then sort, weigh and clean up the list.',
     items: [],
     next: [
@@ -115,7 +195,7 @@ const FOLDERS = [
     ]
   },
   {
-    id: 'project-organizer', state: 'empty',
+    id: 'project-organizer', c: 'proj', state: 'empty',
     goal: 'Keep each project, its goals and recent work in one view.',
     items: [],
     next: [
@@ -126,7 +206,7 @@ const FOLDERS = [
     ]
   },
   {
-    id: 'content-generation', state: 'empty',
+    id: 'content-generation', c: 'cont', state: 'empty',
     goal: 'Turn sources and ideas into a text, then into a page or a video.',
     items: [],
     next: [
@@ -143,14 +223,17 @@ const panel = document.getElementById('panel');
 const hint = document.getElementById('hint');
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-FOLDERS.forEach(f => {
+FOLDERS.forEach((f, i) => {
   const wrap = document.createElement('div');
   wrap.className = 'kid';
   const b = document.createElement('button');
-  b.className = 'node';
+  b.className = 'node' + (f.items.length ? '' : ' empty');
   b.dataset.id = f.id;
+  b.dataset.c = f.c;
   b.setAttribute('aria-controls', 'panel');
-  b.innerHTML = `<span class="name">${esc(f.id)}/</span><span class="state">${esc(f.state)}</span>`;
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `<span class="badge">${i + 1}</span>${SYM[f.c]}
+    <span class="txt"><span class="name mono">${esc(f.id)}/</span><span class="state">${esc(f.state)}</span></span>`;
   b.addEventListener('click', () => show(f.id));
   wrap.appendChild(b);
   kids.appendChild(wrap);
@@ -159,20 +242,20 @@ FOLDERS.forEach(f => {
 function show(id){
   const f = FOLDERS.find(x => x.id === id);
   if (!f) return;
-  document.querySelectorAll('.kid .node').forEach(n => {
+  document.querySelectorAll('.node').forEach(n => {
     const on = n.dataset.id === id;
     n.classList.toggle('sel', on);
     n.setAttribute('aria-pressed', on);
   });
   const items = f.items.length
-    ? f.items.map(([n, d]) => `<li><b>${esc(n)}</b><span>${esc(d)}</span></li>`).join('')
-    : '<li class="none">Empty for now.</li>';
+    ? f.items.map(([ic, n, d]) => `<li>${IC[ic]}<div><b class="mono">${esc(n)}</b><span>${esc(d)}</span></div></li>`).join('')
+    : `<li class="none">${IC.empty}Empty for now.</li>`;
+  panel.dataset.c = f.c;
   panel.innerHTML = `
-    <h2>${esc(f.id)}/</h2>
-    <p class="goal">${esc(f.goal)}</p>
+    <div class="phead">${SYM[f.c]}<div><h2 class="mono">${esc(f.id)}/</h2><p class="goal">${esc(f.goal)}</p></div></div>
     <div class="cols">
       <div><h3>Contents</h3><ul class="items">${items}</ul></div>
-      <div><h3>Next steps</h3><ul class="steps">${f.next.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+      <div><h3>Next steps</h3><ol class="steps">${f.next.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>
     </div>`;
   panel.hidden = false;
   hint.hidden = true;
