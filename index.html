@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Manager Tree</title>
+<meta name="description" content="The four main folders of the Project Manager, what is in each one, and the next steps.">
+<style>
+:root{
+  --bg:#f7f6f2; --card:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#cfcdc4;
+  --accent:#2f6fde; --soft:#e8effc; --empty:#a19f96;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#45443f;
+    --accent:#7aa5f5; --soft:#1f2a40; --empty:#77756e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161614; --card:#201f1d; --ink:#ecebe6; --muted:#a3a19a; --line:#45443f;
+  --accent:#7aa5f5; --soft:#1f2a40; --empty:#77756e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:880px;margin:0 auto;padding:40px 16px 64px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 36px}
+
+/* tree */
+.tree{display:flex;flex-direction:column;align-items:center}
+.node{font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line);
+  border-radius:10px;padding:10px 14px;cursor:pointer;text-align:center;min-width:0}
+.root{cursor:default;font-weight:600;font-family:ui-monospace,Consolas,monospace}
+.stem{width:1.5px;height:22px;background:var(--line)}
+.kids{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;position:relative;padding-top:22px}
+.kids::before{content:"";position:absolute;top:0;left:12.5%;right:12.5%;height:1.5px;background:var(--line)}
+.kid{position:relative;display:flex}
+.kid::before{content:"";position:absolute;top:-22px;left:50%;width:1.5px;height:22px;background:var(--line)}
+.kid .node{width:100%}
+.name{display:block;font-family:ui-monospace,Consolas,monospace;font-weight:600;font-size:.92rem;word-break:break-word}
+.state{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
+.node.sel{border-color:var(--accent);background:var(--soft)}
+.node:not(.root):hover{border-color:var(--accent)}
+.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* panel */
+.panel{margin-top:28px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:20px 22px}
+.panel h2{margin:0 0 2px;font-size:1.15rem;font-family:ui-monospace,Consolas,monospace}
+.panel .goal{color:var(--muted);margin:0 0 18px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+h3{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.items{list-style:none;margin:0;padding:0}
+.items li{padding:8px 0;border-top:1px solid var(--line)}
+.items li:first-child{border-top:0;padding-top:0}
+.items b{display:block;font-family:ui-monospace,Consolas,monospace;font-size:.9rem}
+.items span{color:var(--muted);font-size:.9rem}
+.items .none{color:var(--empty);font-style:italic}
+.steps{margin:0;padding-left:1.1em}
+.steps li{margin:0 0 6px}
+.hint{color:var(--muted);text-align:center;margin:28px 0 0}
+
+@media (max-width:640px){
+  .kids{grid-template-columns:1fr;gap:10px;padding:0 0 0 22px;align-self:stretch}
+  .kids::before{left:0;right:auto;top:0;bottom:22px;width:1.5px;height:auto}
+  .kid::before{top:50%;left:-22px;width:22px;height:1.5px}
+  .tree{align-items:flex-start}
+  .stem{margin-left:0;height:14px}
+  .node{text-align:left}
+  .cols{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Project Manager</h1>
+  <p class="sub">Four folders, in the order the data flows. Click one to see what's in it and what comes next.</p>
+
+  <div class="tree" id="tree">
+    <div class="node root">project-manager/</div>
+    <div class="stem"></div>
+    <div class="kids" id="kids"></div>
+  </div>
+
+  <section class="panel" id="panel" hidden aria-live="polite"></section>
+  <p class="hint" id="hint">Pick a folder above.</p>
+</main>
+
+<script>
+const FOLDERS = [
+  {
+    id: 'data', state: '2 stores · 19.2 GB',
+    goal: 'Collect the books and papers, and index them so every other folder can search them.',
+    items: [
+      ['ebooks/', '341 books in 20 categories (12 GB). 141 books, 69,223 pages in the search index.'],
+      ['papers/', '3.25 million arXiv records (7.2 GB). Titles and abstracts only, no full text.']
+    ],
+    next: [
+      'Index the 200 books not yet searchable',
+      'Add Zotero and OpenAlex as paper sources',
+      'One skill to find, sort and index both',
+      'Add meaning search only if word search misses'
+    ]
+  },
+  {
+    id: 'idea-organizer', state: 'empty',
+    goal: 'Catch each new idea, then sort, weigh and clean up the list.',
+    items: [],
+    next: [
+      'Build the input tracker skill',
+      'Tag, score, then clean up each idea',
+      'Score with the urgent/important grid',
+      'Link ideas to books and papers',
+      'Keep a list of every skill and its owner'
+    ]
+  },
+  {
+    id: 'project-organizer', state: 'empty',
+    goal: 'Keep each project, its goals and recent work in one view.',
+    items: [],
+    next: [
+      'Set one goal per project',
+      'Log work and review it weekly',
+      'Build "recently worked on" from file dates',
+      'Pull in scored ideas from the idea organizer'
+    ]
+  },
+  {
+    id: 'content-generation', state: 'empty',
+    goal: 'Turn sources and ideas into a text, then into a page or a video.',
+    items: [],
+    next: [
+      'Text skill: 1–2 pages with sources',
+      'Wire up the existing /page skill',
+      'Video skill (Remotion or Manim)',
+      'Add a map of ideas with graphify'
+    ]
+  }
+];
+
+const kids = document.getElementById('kids');
+const panel = document.getElementById('panel');
+const hint = document.getElementById('hint');
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+FOLDERS.forEach(f => {
+  const wrap = document.createElement('div');
+  wrap.className = 'kid';
+  const b = document.createElement('button');
+  b.className = 'node';
+  b.dataset.id = f.id;
+  b.setAttribute('aria-controls', 'panel');
+  b.innerHTML = `<span class="name">${esc(f.id)}/</span><span class="state">${esc(f.state)}</span>`;
+  b.addEventListener('click', () => show(f.id));
+  wrap.appendChild(b);
+  kids.appendChild(wrap);
+});
+
+function show(id){
+  const f = FOLDERS.find(x => x.id === id);
+  if (!f) return;
+  document.querySelectorAll('.kid .node').forEach(n => {
+    const on = n.dataset.id === id;
+    n.classList.toggle('sel', on);
+    n.setAttribute('aria-pressed', on);
+  });
+  const items = f.items.length
+    ? f.items.map(([n, d]) => `<li><b>${esc(n)}</b><span>${esc(d)}</span></li>`).join('')
+    : '<li class="none">Empty for now.</li>';
+  panel.innerHTML = `
+    <h2>${esc(f.id)}/</h2>
+    <p class="goal">${esc(f.goal)}</p>
+    <div class="cols">
+      <div><h3>Contents</h3><ul class="items">${items}</ul></div>
+      <div><h3>Next steps</h3><ul class="steps">${f.next.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+    </div>`;
+  panel.hidden = false;
+  hint.hidden = true;
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+}
+
+const start = location.hash.slice(1);
+if (FOLDERS.some(f => f.id === start)) show(start);
+</script>
+</body>
+</html>
