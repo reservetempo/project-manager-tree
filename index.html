@@ -87,7 +87,7 @@ svg{display:block}
 .phead .sym{width:52px;height:52px;flex:none}
 .panel h2{margin:0;font-size:1.15rem}
 .panel .goal{color:var(--muted);margin:2px 0 0}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
 h3{font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--c);margin:0 0 10px}
 .items{list-style:none;margin:0;padding:0}
 .items li{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
@@ -157,7 +157,8 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
   .node[data-c="data"] .sym{width:56px;height:56px}
   .name{text-align:left}
   .txt{align-items:flex-start}
-  .cols{grid-template-columns:1fr}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .panel{padding:18px 16px}
 }
 </style>
 </head>
