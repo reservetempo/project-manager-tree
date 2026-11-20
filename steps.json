@@ -1,0 +1,27 @@
+{
+  "data": [
+    "Index the 200 books not yet searchable",
+    "Add Zotero and OpenAlex as paper sources",
+    "One skill to find, sort and index both",
+    "Add meaning search only if word search misses"
+  ],
+  "idea-organizer": [
+    "Build the input tracker skill",
+    "Tag, score, then clean up each idea",
+    "Score with the urgent/important grid",
+    "Link ideas to books and papers",
+    "Keep a list of every skill and its owner"
+  ],
+  "project-organizer": [
+    "Set one goal per project",
+    "Log work and review it weekly",
+    "Build \"recently worked on\" from file dates",
+    "Pull in scored ideas from the idea organizer"
+  ],
+  "content-generation": [
+    "Text skill: 1–2 pages with sources",
+    "Wire up the existing /page skill",
+    "Video skill (Remotion or Manim)",
+    "Add a map of ideas with graphify"
+  ]
+}
