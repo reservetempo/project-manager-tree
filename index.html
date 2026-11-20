@@ -142,6 +142,26 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
 .primary:disabled{opacity:.45;cursor:default}
 .status{font-size:.82rem;color:var(--muted)}
 .status.bad{color:#d14343}
+.fld{display:block;font-size:.85rem;color:var(--muted);margin:0 0 10px}
+.fld input{margin-top:4px}
+
+/* priority: one hue (red), more ink = more urgent; low has no mark */
+:root{--hi:#d43c3c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--hi:#ff6b6b}}
+:root[data-theme="dark"]{--hi:#ff6b6b}
+.pri{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.02em;line-height:1.5;border-radius:999px;
+  padding:0 7px;border:1.5px solid var(--hi);white-space:nowrap;vertical-align:1px}
+.pri.high{background:var(--hi);color:var(--card)}
+.pri.medium{color:var(--hi);background:transparent}
+.legend .pri{margin-right:2px}
+.hot{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:1.1em;margin-top:2px}
+.hot:empty{display:none}
+.steps li .pri{margin-left:6px}
+.steps li.p-high .stxt{font-weight:600}
+.pbtn{font:inherit;font-size:.7rem;font-weight:700;width:58px;height:24px;border-radius:999px;cursor:pointer;
+  border:1.5px solid var(--hi);background:transparent;color:var(--hi)}
+.pbtn.low{border:1.5px dashed var(--line);color:var(--muted);font-weight:500}
+.pbtn.high{background:var(--hi);color:var(--card)}
 
 @media (max-width:680px){
   .tree{align-items:flex-start}
@@ -157,6 +177,7 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
   .node[data-c="data"] .sym{width:56px;height:56px}
   .name{text-align:left}
   .txt{align-items:flex-start}
+  .hot{justify-content:flex-start}
   .cols{grid-template-columns:minmax(0,1fr)}
   .panel{padding:18px 16px}
 }
@@ -166,7 +187,7 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
 <main>
   <div class="top"><h1>Project Manager</h1><button class="auth" id="authBtn" type="button">Sign in</button></div>
   <p class="sub">Four folders, numbered in the order data flows through them. Click one to see what's in it and what comes next.</p>
-  <p class="legend"><span><i></i>solid = has content</span><span><i class="dash"></i>dashed = empty, still to build</span></p>
+  <p class="legend"><span><i></i>solid = has content</span><span><i class="dash"></i>dashed = empty, still to build</span><span><b class="pri high">High</b> <b class="pri medium">Medium</b> priority · unmarked = low</span></p>
 
   <div class="tree">
     <div class="root mono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>project-manager/</div>
@@ -181,15 +202,10 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
 <dialog id="login" aria-labelledby="loginTitle">
   <form id="loginForm">
     <h2 id="loginTitle">Sign in to edit</h2>
-    <p>Only the <b>reservetempo</b> GitHub account can edit. Paste a GitHub token that can write to this repo.</p>
-    <ol>
-      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Make a fine-grained token</a>.</li>
-      <li>Repository access: only <b>project-manager-tree</b>.</li>
-      <li>Permissions: <b>Contents</b>, read and write.</li>
-    </ol>
-    <input id="tokenIn" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" aria-label="GitHub token">
+    <p>Only the page owner can edit the next steps.</p>
+    <label class="fld">Email<input id="emailIn" type="email" autocomplete="username" required></label>
+    <label class="fld">Password<input id="passIn" type="password" autocomplete="current-password" required></label>
     <p class="err" id="loginErr" role="alert"></p>
-    <p>The token stays in this browser only. Sign out to remove it.</p>
     <div class="row">
       <button type="button" class="ghost" id="cancelLogin" style="--c:var(--muted)">Cancel</button>
       <button type="submit" class="primary" style="--c:var(--data)">Sign in</button>
@@ -197,6 +213,8 @@ dialog input{width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5
   </form>
 </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <script>
 /* Symbols: each one is a conventional sign for what the folder does. */
 const SYM = {
@@ -256,47 +274,47 @@ const FOLDERS = [
   }
 ];
 
-/* Next steps live in steps.json in the repo. These are used only if it can't be read. */
+/* Priorities, in order. Unmarked means low. */
+const PRI = ['low', 'medium', 'high'];
+const PRI_LABEL = { low: 'Low', medium: 'Medium', high: 'High' };
+
+/* Used only until Supabase is connected, or if it can't be reached. */
+const plain = list => list.map(text => ({ text, priority: 'low' }));
 let STEPS = {
-  'data': ['Index the 200 books not yet searchable', 'Add Zotero and OpenAlex as paper sources', 'One skill to find, sort and index both', 'Add meaning search only if word search misses'],
-  'idea-organizer': ['Build the input tracker skill', 'Tag, score, then clean up each idea', 'Score with the urgent/important grid', 'Link ideas to books and papers', 'Keep a list of every skill and its owner'],
-  'project-organizer': ['Set one goal per project', 'Log work and review it weekly', 'Build "recently worked on" from file dates', 'Pull in scored ideas from the idea organizer'],
-  'content-generation': ['Text skill: 1–2 pages with sources', 'Wire up the existing /page skill', 'Video skill (Remotion or Manim)', 'Add a map of ideas with graphify']
+  'data': plain(['Index the 200 books not yet searchable', 'Add Zotero and OpenAlex as paper sources', 'One skill to find, sort and index both', 'Add meaning search only if word search misses']),
+  'idea-organizer': plain(['Build the input tracker skill', 'Tag, score, then clean up each idea', 'Score with the urgent/important grid', 'Link ideas to books and papers', 'Keep a list of every skill and its owner']),
+  'project-organizer': plain(['Set one goal per project', 'Log work and review it weekly', 'Build "recently worked on" from file dates', 'Pull in scored ideas from the idea organizer']),
+  'content-generation': plain(['Text skill: 1–2 pages with sources', 'Wire up the existing /page skill', 'Video skill (Remotion or Manim)', 'Add a map of ideas with graphify'])
 };
 
-/* ---------- GitHub: the only account allowed to edit ---------- */
-const OWNER = 'reservetempo', REPO = 'project-manager-tree', FILE = 'steps.json';
-const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
-const KEY = 'pmt-token';
-let token = null, user = null;
-try { token = localStorage.getItem(KEY); } catch (e) {}
-
-const hdr = t => ({ Accept: 'application/vnd.github+json', Authorization: `Bearer ${t}`, 'X-GitHub-Api-Version': '2022-11-28' });
-const b64decode = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), ch => ch.charCodeAt(0)));
-const b64encode = s => { let out = ''; new TextEncoder().encode(s).forEach(b => out += String.fromCharCode(b)); return btoa(out); };
-
-async function readRemote(){
-  const r = await fetch(`${API}/contents/${FILE}?ref=main`, { headers: hdr(token), cache: 'no-store' });
-  if (!r.ok) throw new Error('read ' + r.status);
-  const j = await r.json();
-  return { steps: JSON.parse(b64decode(j.content)), sha: j.sha };
-}
-
-async function verify(t){
-  const u = await fetch('https://api.github.com/user', { headers: hdr(t), cache: 'no-store' });
-  if (u.status === 401) throw new Error('GitHub did not accept that token.');
-  if (!u.ok) throw new Error('Could not reach GitHub (' + u.status + ').');
-  const me = await u.json();
-  if (me.login !== OWNER) throw new Error('Only ' + OWNER + ' can edit this page.');
-  return me.login;
-}
+/* ---------- Supabase ---------- */
+const CFG = window.PMT_CONFIG || {};
+let sb = null;
+try {
+  if (CFG.url && CFG.anonKey && window.supabase) sb = window.supabase.createClient(CFG.url, CFG.anonKey);
+} catch (e) { sb = null; }
+let user = null;      // signed-in email
+let editor = false;   // listed in public.editors
 
 async function loadSteps(){
-  try {
-    if (token) { STEPS = (await readRemote()).steps; return; }
-    const r = await fetch(FILE + '?t=' + Date.now(), { cache: 'no-store' });
-    if (r.ok) STEPS = await r.json();
-  } catch (e) { /* keep the built-in copy */ }
+  if (!sb) return;
+  const { data, error } = await sb.from('steps')
+    .select('folder, body, priority, position')
+    .order('folder').order('position');
+  if (error) { console.warn('Could not load steps:', error.message); return; }
+  const next = {};
+  FOLDERS.forEach(f => next[f.id] = []);
+  data.forEach(r => { if (next[r.folder]) next[r.folder].push({ text: r.body, priority: PRI.includes(r.priority) ? r.priority : 'low' }); });
+  STEPS = next;
+}
+
+async function refreshUser(session){
+  user = session && session.user ? (session.user.email || 'signed in') : null;
+  editor = false;
+  if (user) {
+    const { data, error } = await sb.rpc('is_editor');
+    editor = !error && data === true;
+  }
 }
 
 /* ---------- tree ---------- */
@@ -316,7 +334,7 @@ FOLDERS.forEach((f, i) => {
   b.setAttribute('aria-controls', 'panel');
   b.setAttribute('aria-pressed', 'false');
   b.innerHTML = `<span class="badge">${i + 1}</span>${SYM[f.c]}
-    <span class="txt"><span class="name mono">${esc(f.id)}/</span><span class="state">${esc(f.state)}</span></span>`;
+    <span class="txt"><span class="name mono">${esc(f.id)}/</span><span class="state">${esc(f.state)}</span><span class="hot"></span></span>`;
   b.addEventListener('click', () => {
     if (dirty && currentId !== f.id && !confirm('Discard your unsaved changes?')) return;
     show(f.id);
@@ -325,11 +343,24 @@ FOLDERS.forEach((f, i) => {
   kids.appendChild(wrap);
 });
 
+/* Each folder card says how many high-priority steps it has. */
+function paintCounts(){
+  document.querySelectorAll('.node').forEach(n => {
+    const list = STEPS[n.dataset.id] || [];
+    const hi = list.filter(s => s.priority === 'high').length;
+    const med = list.filter(s => s.priority === 'medium').length;
+    const parts = [];
+    if (hi) parts.push(`<span class="pri high">${hi} high</span>`);
+    if (med) parts.push(`<span class="pri medium">${med} medium</span>`);
+    n.querySelector('.hot').innerHTML = parts.join('');
+  });
+}
+
 function show(id){
   const f = FOLDERS.find(x => x.id === id);
   if (!f) return;
   currentId = id;
-  draft = (STEPS[id] || []).slice();
+  draft = (STEPS[id] || []).map(s => ({ ...s }));
   dirty = false;
   document.querySelectorAll('.node').forEach(n => {
     const on = n.dataset.id === id;
@@ -344,7 +375,7 @@ function show(id){
     <div class="phead">${SYM[f.c]}<div><h2 class="mono">${esc(f.id)}/</h2><p class="goal">${esc(f.goal)}</p></div></div>
     <div class="cols">
       <div><h3>Contents</h3><ul class="items">${items}</ul></div>
-      <div><h3>Next steps${user ? ' <span class="editing">editing</span>' : ''}</h3><div id="stepsBox"></div></div>
+      <div><h3>Next steps${editor ? ' <span class="editing">editing</span>' : ''}</h3><div id="stepsBox"></div></div>
     </div>`;
   renderSteps();
   panel.hidden = false;
@@ -352,18 +383,21 @@ function show(id){
   try { history.replaceState(null, '', '#' + id); } catch (e) {}
 }
 
+const chip = p => p === 'low' ? '' : `<span class="pri ${p}">${PRI_LABEL[p]}</span>`;
+
 function renderSteps(){
   const box = document.getElementById('stepsBox');
   if (!box) return;
-  if (!user) {
+  if (!editor) {
     box.innerHTML = draft.length
-      ? `<ol class="steps">${draft.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`
+      ? `<ol class="steps">${draft.map(s => `<li class="p-${s.priority}"><span class="stxt">${esc(s.text)}</span>${chip(s.priority)}</li>`).join('')}</ol>`
       : '<p class="muted">No next steps yet.</p>';
     return;
   }
   box.innerHTML = `<ol class="steps edit">${draft.map((s, i) => `
-      <li><input class="step-in" data-i="${i}" value="${esc(s)}" aria-label="Step ${i + 1}">
+      <li><input class="step-in" data-i="${i}" value="${esc(s.text)}" maxlength="300" aria-label="Step ${i + 1}">
         <span class="tools">
+          <button class="pbtn ${s.priority}" data-act="pri" data-i="${i}" title="Priority: ${PRI_LABEL[s.priority]}. Click to change." aria-label="Step ${i + 1} priority: ${PRI_LABEL[s.priority]}">${PRI_LABEL[s.priority]}</button>
           <button class="mini" data-act="up" data-i="${i}" title="Move up" aria-label="Move step ${i + 1} up" ${i ? '' : 'disabled'}>↑</button>
           <button class="mini" data-act="down" data-i="${i}" title="Move down" aria-label="Move step ${i + 1} down" ${i < draft.length - 1 ? '' : 'disabled'}>↓</button>
           <button class="mini del" data-act="del" data-i="${i}" title="Delete" aria-label="Delete step ${i + 1}">×</button>
@@ -377,14 +411,14 @@ function renderSteps(){
 
 panel.addEventListener('input', e => {
   if (!e.target.classList.contains('step-in')) return;
-  draft[+e.target.dataset.i] = e.target.value;
+  draft[+e.target.dataset.i].text = e.target.value;
   markDirty();
 });
 panel.addEventListener('keydown', e => {
   if (e.target.classList.contains('step-in') && e.key === 'Enter') {
     e.preventDefault();
     const i = +e.target.dataset.i;
-    draft.splice(i + 1, 0, '');
+    draft.splice(i + 1, 0, { text: '', priority: 'low' });
     markDirty(); renderSteps(); focusStep(i + 1);
   }
 });
@@ -392,8 +426,14 @@ panel.addEventListener('click', e => {
   const b = e.target.closest('button[data-act]');
   if (!b) return;
   const i = +b.dataset.i, act = b.dataset.act;
-  if (act === 'add') { draft.push(''); markDirty(); renderSteps(); focusStep(draft.length - 1); return; }
+  if (act === 'add') { draft.push({ text: '', priority: 'low' }); markDirty(); renderSteps(); focusStep(draft.length - 1); return; }
   if (act === 'save') { save(); return; }
+  if (act === 'pri') {
+    draft[i].priority = PRI[(PRI.indexOf(draft[i].priority) + 1) % PRI.length];
+    markDirty(); renderSteps();
+    const again = panel.querySelector(`[data-act="pri"][data-i="${i}"]`); if (again) again.focus();
+    return;
+  }
   if (act === 'del') draft.splice(i, 1);
   if (act === 'up' && i > 0) [draft[i - 1], draft[i]] = [draft[i], draft[i - 1]];
   if (act === 'down' && i < draft.length - 1) [draft[i + 1], draft[i]] = [draft[i], draft[i + 1]];
@@ -414,41 +454,22 @@ function setStatus(msg, bad){
 
 async function save(){
   const id = currentId;
-  const clean = draft.map(s => s.trim()).filter(Boolean);
+  const clean = draft.map(s => ({ text: s.text.trim(), priority: s.priority })).filter(s => s.text);
   const btn = panel.querySelector('[data-act="save"]');
   btn.disabled = true;
   setStatus('Saving…');
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      /* Read the latest file first, and change only this folder's list. */
-      const { steps, sha } = await readRemote();
-      steps[id] = clean;
-      const r = await fetch(`${API}/contents/${FILE}`, {
-        method: 'PUT',
-        headers: { ...hdr(token), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: `Update next steps for ${id}`,
-          content: b64encode(JSON.stringify(steps, null, 2) + '\n'),
-          sha, branch: 'main'
-        })
-      });
-      if (r.status === 409 || r.status === 422) continue;
-      if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error('This token cannot write to the repo. It needs Contents: read and write on ' + REPO + '.');
-      if (!r.ok) throw new Error('GitHub said ' + r.status + '.');
-      STEPS = steps;
-      draft = clean.slice();
-      dirty = false;
-      renderSteps();
-      setStatus('Saved. Visitors see it after GitHub Pages rebuilds, in about a minute.');
-      return;
-    } catch (e) {
-      setStatus(e.message, true);
-      btn.disabled = false;
-      return;
-    }
+  const { error } = await sb.rpc('save_steps', { p_folder: id, p_items: clean });
+  if (error) {
+    setStatus(error.code === '42501' ? 'This account is not allowed to edit.' : 'Could not save: ' + error.message, true);
+    btn.disabled = false;
+    return;
   }
-  setStatus('The file changed while saving. Try again.', true);
-  btn.disabled = false;
+  STEPS[id] = clean;
+  draft = clean.map(s => ({ ...s }));
+  dirty = false;
+  renderSteps();
+  paintCounts();
+  setStatus('Saved.');
 }
 
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
@@ -456,58 +477,60 @@ window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); 
 /* ---------- sign in ---------- */
 const authBtn = document.getElementById('authBtn');
 const dlg = document.getElementById('login');
-const tokenIn = document.getElementById('tokenIn');
+const emailIn = document.getElementById('emailIn');
+const passIn = document.getElementById('passIn');
 const loginErr = document.getElementById('loginErr');
 
 function paintAuth(){
+  authBtn.hidden = !sb;
   authBtn.innerHTML = user
-    ? `${LOCK_OPEN}<span>${esc(user)} · sign out</span>`
+    ? `${LOCK_OPEN}<span>${editor ? 'Editing' : 'Read only'} · sign out</span>`
     : `${LOCK}<span>Sign in</span>`;
+  authBtn.title = user ? 'Signed in as ' + user : '';
   document.body.classList.toggle('signed-in', !!user);
 }
 
-authBtn.addEventListener('click', () => {
+authBtn.addEventListener('click', async () => {
   if (user) {
     if (dirty && !confirm('Discard your unsaved changes?')) return;
-    user = null; token = null;
-    try { localStorage.removeItem(KEY); } catch (e) {}
-    paintAuth();
-    if (currentId) show(currentId);
-    return;
+    dirty = false;
+    await sb.auth.signOut();
+    return;   // onAuthStateChange repaints
   }
   loginErr.textContent = '';
-  tokenIn.value = '';
+  passIn.value = '';
   dlg.showModal();
-  tokenIn.focus();
+  (emailIn.value ? passIn : emailIn).focus();
 });
 document.getElementById('cancelLogin').addEventListener('click', () => dlg.close());
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const t = tokenIn.value.trim();
-  if (!t) return;
-  loginErr.textContent = 'Checking…';
-  try {
-    user = await verify(t);
-    token = t;
-    try { localStorage.setItem(KEY, t); } catch (err) {}
-    tokenIn.value = '';
-    dlg.close();
-    await loadSteps();
-    paintAuth();
-    if (currentId) show(currentId);
-  } catch (err) {
-    loginErr.textContent = err.message;
-  }
+  loginErr.textContent = 'Signing in…';
+  const { error } = await sb.auth.signInWithPassword({ email: emailIn.value.trim(), password: passIn.value });
+  passIn.value = '';
+  if (error) { loginErr.textContent = error.message; return; }
+  dlg.close();
 });
 
 /* ---------- start ---------- */
 (async () => {
-  if (token) {
-    try { user = await verify(token); }
-    catch (e) { token = null; try { localStorage.removeItem(KEY); } catch (err) {} }
-  }
   paintAuth();
+  if (sb) {
+    const { data } = await sb.auth.getSession();
+    await refreshUser(data.session);
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+      /* Supabase asks not to await its calls inside this callback. */
+      setTimeout(async () => {
+        await refreshUser(session);
+        paintAuth();
+        if (currentId && !dirty) show(currentId);
+      }, 0);
+    });
+  }
   await loadSteps();
+  paintAuth();
+  paintCounts();
   const start = location.hash.slice(1);
   if (FOLDERS.some(f => f.id === start)) show(start);
 })();
